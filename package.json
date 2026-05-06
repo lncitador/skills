@@ -25,7 +25,8 @@
   },
   "dependencies": {
     "@adonisjs/ace": "^14.1.0",
-    "execa": "^9.6.1"
+    "execa": "^9.6.1",
+    "skills": "^1.5.5"
   },
   "devDependencies": {
     "@japa/assert": "^4.2.0",

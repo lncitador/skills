@@ -1,5 +1,9 @@
+import { createRequire } from 'node:module'
 import { execa } from 'execa'
 import { BaseCommand, flags } from '@adonisjs/ace'
+
+const require = createRequire(import.meta.url)
+const skillsBin = require.resolve('skills/bin/cli.mjs')
 
 import {
   AVAILABLE_SKILLS,
@@ -146,7 +150,7 @@ export class InstallSkills extends BaseCommand {
       skills,
       global: isGlobal,
       agents: this.#parseAgents(),
-      yes: this.yes,
+      yes: true,
     })
 
     this.logger.info(`Installing skills: ${skills.join(', ')}`)
@@ -156,8 +160,8 @@ export class InstallSkills extends BaseCommand {
       return
     }
 
-    await execa('npx', args, {
-      stdio: this.verbose ? 'inherit' : 'pipe',
+    await execa('node', [skillsBin, ...args.slice(1)], {
+      stdio: 'inherit',
     })
 
     this.logger.success('AdonisJS Maestro skills installed')
