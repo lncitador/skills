@@ -9,8 +9,9 @@ import {
 
 test.group('stacks', () => {
   test('defines stack presets with the expected skills', ({ assert }) => {
-    assert.deepEqual(getStack('monorepo')?.skills, ['maestro', 'adonisjs', 'lucid', 'japa'])
     assert.deepEqual(getStack('hypermedia')?.skills, ['maestro', 'adonisjs', 'lucid', 'japa'])
+    assert.deepEqual(getStack('api')?.skills, ['maestro', 'adonisjs', 'lucid', 'japa'])
+    assert.deepEqual(getStack('api-monorepo')?.skills, ['maestro', 'adonisjs', 'lucid', 'japa'])
     assert.deepEqual(getStack('react')?.skills, [
       'maestro',
       'adonisjs',
@@ -26,6 +27,16 @@ test.group('stacks', () => {
       'inertia-vue',
     ])
     assert.deepEqual(getStack('custom')?.skills, [])
+    assert.isUndefined(getStack('monorepo'))
+  })
+
+  test('defines stack presets with the expected starter kits', ({ assert }) => {
+    assert.equal(getStack('hypermedia')?.starterKit, 'github:adonisjs/starter-kits/hypermedia')
+    assert.equal(getStack('react')?.starterKit, 'github:adonisjs/starter-kits/inertia-react')
+    assert.equal(getStack('vue')?.starterKit, 'github:adonisjs/starter-kits/inertia-vue')
+    assert.equal(getStack('api')?.starterKit, 'github:adonisjs/starter-kits/api')
+    assert.equal(getStack('api-monorepo')?.starterKit, 'github:adonisjs/starter-kits/api-monorepo')
+    assert.isNull(getStack('custom')?.starterKit)
   })
 
   test('parses comma-separated skills and removes duplicates', ({ assert }) => {

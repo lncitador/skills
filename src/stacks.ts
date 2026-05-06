@@ -38,44 +38,57 @@ export const SKILL_METADATA: Record<SkillName, { label: string; hint: string }> 
   },
 }
 
-export type StackName = 'monorepo' | 'hypermedia' | 'react' | 'vue' | 'custom'
+export type StackName = 'hypermedia' | 'react' | 'vue' | 'api' | 'api-monorepo' | 'custom'
 
 export type StackDefinition = {
   name: StackName
   label: string
   hint: string
+  starterKit: string | null
   skills: SkillName[]
 }
 
 export const STACKS: StackDefinition[] = [
   {
-    name: 'monorepo',
-    label: 'Monorepo: API + TanStack',
-    hint: 'API/backend workflow without Inertia frontend skills',
-    skills: ['maestro', 'adonisjs', 'lucid', 'japa'],
-  },
-  {
     name: 'hypermedia',
-    label: 'Hypermedia',
-    hint: 'Server-rendered or hypermedia-oriented AdonisJS app',
+    label: 'Hypermedia app',
+    hint: 'A full-stack app using server-side templates',
+    starterKit: 'github:adonisjs/starter-kits/hypermedia',
     skills: ['maestro', 'adonisjs', 'lucid', 'japa'],
   },
   {
     name: 'react',
-    label: 'Fullstack: Inertia React',
-    hint: 'AdonisJS + Lucid + Inertia React',
+    label: 'React app (using Inertia)',
+    hint: 'A full-stack React app with end-to-end type safety',
+    starterKit: 'github:adonisjs/starter-kits/inertia-react',
     skills: ['maestro', 'adonisjs', 'lucid', 'japa', 'inertia-react'],
   },
   {
     name: 'vue',
-    label: 'Fullstack: Inertia Vue',
-    hint: 'AdonisJS + Lucid + Inertia Vue',
+    label: 'Vue app (using Inertia)',
+    hint: 'A full-stack Vue app with end-to-end type safety',
+    starterKit: 'github:adonisjs/starter-kits/inertia-vue',
     skills: ['maestro', 'adonisjs', 'lucid', 'japa', 'inertia-vue'],
+  },
+  {
+    name: 'api',
+    label: 'API',
+    hint: 'A type-safe REST API with session and access token auth',
+    starterKit: 'github:adonisjs/starter-kits/api',
+    skills: ['maestro', 'adonisjs', 'lucid', 'japa'],
+  },
+  {
+    name: 'api-monorepo',
+    label: 'API (monorepo)',
+    hint: 'A monorepo setup with a type-safe REST API',
+    starterKit: 'github:adonisjs/starter-kits/api-monorepo',
+    skills: ['maestro', 'adonisjs', 'lucid', 'japa'],
   },
   {
     name: 'custom',
     label: 'Custom',
     hint: 'Choose individual skills',
+    starterKit: null,
     skills: [],
   },
 ]
