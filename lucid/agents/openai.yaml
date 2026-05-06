@@ -1,0 +1,7 @@
+interface:
+  display_name: "Lucid"
+  short_description: "Lucid ORM, migrations, models, and queries"
+  default_prompt: "Use $lucid to work with Lucid ORM models, migrations, relationships, queries, and factories."
+
+policy:
+  allow_implicit_invocation: true
