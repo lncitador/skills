@@ -41,6 +41,12 @@ Use these runbooks for complete feature flows that cross multiple skills:
 | Full CRUD resource | `runbooks/crud.md` | `maestro` -> `lucid` -> `adonisjs` -> `inertia-*` -> `japa` |
 | File uploads with Drive | `runbooks/file-upload.md` | `maestro` -> `adonisjs` -> `lucid` -> `inertia-*` -> `japa` |
 | Two-Factor Authentication (TOTP + recovery codes) | `runbooks/two-factor-auth.md` | `maestro` -> `lucid` -> `adonisjs` -> `japa` |
+| Inertia resource with typed pages/forms | `runbooks/inertia-resource.md` | `maestro` -> `lucid` -> `adonisjs` -> `inertia-*` -> `japa` |
+| JSON API endpoint | `runbooks/api-endpoint.md` | `maestro` -> `lucid` as needed -> `adonisjs` -> `japa` |
+| Background job, event, or queued side effect | `runbooks/background-job.md` | `maestro` -> `adonisjs` -> `lucid` as needed -> `japa` |
+| Transactional email flow | `runbooks/email-flow.md` | `maestro` -> `lucid` as needed -> `adonisjs` -> `japa` |
+| Admin permissions and policy-backed UI | `runbooks/admin-permissions.md` | `maestro` -> `lucid` -> `adonisjs` -> `inertia-*` -> `japa` |
+| Reporting dashboard or aggregate view | `runbooks/reporting-dashboard.md` | `maestro` -> `lucid` -> `adonisjs` -> `inertia-*` or API -> `japa` |
 
 Do not treat runbooks as a replacement for specialized skills. A runbook defines the orchestration path; each skill owns its technical details.
 
