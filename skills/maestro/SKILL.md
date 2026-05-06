@@ -75,9 +75,13 @@ Identify:
 - Which framework/domain skills apply
 - Whether there are unrelated local changes to preserve
 
+Before any edit, state the execution plan in the conversation. This is mandatory regardless of task size: one-line fix, copy change, test update, generated-type issue, or full feature all require a stated plan first.
+
 ## Phase 2: Planning
 
 Gate: a clear plan or task boundary must exist before BUILD.
+
+NEVER edit files before stating the plan. Do not treat "small", "obvious", or "quick" tasks as exceptions. If the plan changes after inspection, state the revised plan before continuing.
 
 ```text
 IF a plan was provided:
@@ -114,6 +118,19 @@ lucid: migration -> schema generation -> model relationships
       -> UI components and forms
 ```
 
+If the task touches generated AdonisJS client/types (`.adonisjs`, `@generated/*`, `Data.*`, `InferPageProps`, Tuyau routes, controller imports), ensure the app dev server is running before relying on generated files. The dev server is the source that regenerates `.adonisjs`.
+
+### Dev Server Watcher
+
+For BUILD and VERIFY work that depends on regenerated `.adonisjs` files, maintain a background watcher mindset:
+
+- Check whether the relevant dev server is already running before editing generated-contract code.
+- If it is not running, identify the repo's dev command from `package.json`, project docs, or app scripts, then start it when allowed.
+- Keep the server running while backend contracts, transformers, controllers, routes, or Inertia props are changing.
+- After changing backend contracts, wait for regeneration before typing frontend props or route helpers.
+- If subagents/background workers are available and the user has asked for background or parallel work, assign one watcher to monitor dev-server output and report generation/errors. Otherwise, manage the running dev server locally.
+- Before DONE, report whether the server is still running, was stopped, or could not be started.
+
 Default build order:
 
 1. Data contract: migration -> schema generation -> model -> relationships
@@ -121,10 +138,20 @@ Default build order:
 3. Frontend contract: page props -> forms -> navigation -> UI components
 4. Tests: focused unit/functional tests first, browser tests when UI behavior matters
 
+Before editing UI, run this checklist:
+
+- Match the existing UI language and conventions in the touched app.
+- Reuse existing layout, spacing, form, table, modal, navigation, and empty-state patterns.
+- Match the existing component library and local wrappers before adding new UI primitives.
+- Match existing copy tone, labels, validation messages, and action naming.
+- Preserve existing responsive behavior and interaction patterns unless the plan explicitly changes them.
+- Confirm data-bound UI uses generated/current backend types instead of hand-written guesses.
+
 Parallelize only when the user explicitly asks for subagents or parallel work, and only after dependencies are clear.
 
 Do not:
 
+- Edit before stating a plan
 - Edit generated files unless the repo explicitly requires it
 - Use `git add .` or `git add -A`
 - Broaden the task beyond the request
