@@ -3,6 +3,7 @@ import { BaseCommand, flags } from '@adonisjs/ace'
 
 import {
   AVAILABLE_SKILLS,
+  SKILL_METADATA,
   STACKS,
   type SkillName,
   buildSkillsAddArgs,
@@ -71,15 +72,29 @@ export class InstallSkills extends BaseCommand {
   }
 
   async #promptForCustomSkills() {
-    const answer = await this.prompt.ask(
-      [
-        'Which skills should be installed?',
-        `Available: ${AVAILABLE_SKILLS.join(', ')}`,
-        'Enter a comma-separated list',
-      ].join('\n')
+    const selected = await this.prompt.multiple(
+      'Which skills should be installed?',
+      AVAILABLE_SKILLS.map((skill) => ({
+        name: skill,
+        message: SKILL_METADATA[skill].label,
+        hint: SKILL_METADATA[skill].hint,
+      })),
+      {
+        validate: (values) => values.length > 0 || 'Select at least one skill',
+      }
     )
 
-    return parseSkills(answer)
+    return selected as SkillName[]
+  }
+
+  async #promptForScope() {
+    if (this.global !== undefined || this.yes) {
+      return this.global ?? false
+    }
+
+    return this.prompt.toggle('Install scope', ['Global (~/.claude/skills)', 'Project (.claude/skills)'], {
+      default: false,
+    })
   }
 
   #parseAgents() {
@@ -123,9 +138,11 @@ export class InstallSkills extends BaseCommand {
       throw new Error('No skills selected')
     }
 
+    const isGlobal = await this.#promptForScope()
+
     const args = buildSkillsAddArgs({
       skills,
-      global: this.global,
+      global: isGlobal,
       agents: this.#parseAgents(),
       yes: this.yes,
     })

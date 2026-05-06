@@ -11,6 +11,33 @@ export const AVAILABLE_SKILLS = [
 
 export type SkillName = (typeof AVAILABLE_SKILLS)[number]
 
+export const SKILL_METADATA: Record<SkillName, { label: string; hint: string }> = {
+  maestro: {
+    label: 'Maestro',
+    hint: 'Orchestration: intake → plan → build → verify → publish',
+  },
+  adonisjs: {
+    label: 'AdonisJS',
+    hint: 'Controllers, routes, auth, middleware, services, events',
+  },
+  lucid: {
+    label: 'Lucid',
+    hint: 'Migrations, models, relationships, query builders, factories',
+  },
+  japa: {
+    label: 'Japa',
+    hint: 'API, browser, and console tests with fakes and database setup',
+  },
+  'inertia-react': {
+    label: 'Inertia React',
+    hint: 'React frontend patterns for AdonisJS + Inertia projects',
+  },
+  'inertia-vue': {
+    label: 'Inertia Vue',
+    hint: 'Vue 3 frontend patterns for AdonisJS + Inertia projects',
+  },
+}
+
 export type StackName = 'monorepo' | 'hypermedia' | 'react' | 'vue' | 'custom'
 
 export type StackDefinition = {
