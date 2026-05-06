@@ -1,9 +1,8 @@
-import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 import { execa } from 'execa'
 import { BaseCommand, flags } from '@adonisjs/ace'
 
-const require = createRequire(import.meta.url)
-const skillsBin = require.resolve('skills/bin/cli.mjs')
+const skillsBin = fileURLToPath(import.meta.resolve('skills/bin/cli.mjs'))
 
 import {
   AVAILABLE_SKILLS,
