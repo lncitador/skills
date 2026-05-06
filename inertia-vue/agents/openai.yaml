@@ -1,0 +1,7 @@
+interface:
+  display_name: "Inertia Vue"
+  short_description: "Vue frontend patterns for AdonisJS Inertia"
+  default_prompt: "Use $inertia-vue with $adonisjs to build or review an AdonisJS Inertia Vue page."
+
+policy:
+  allow_implicit_invocation: true

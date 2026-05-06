@@ -1,0 +1,7 @@
+interface:
+  display_name: "AdonisJS"
+  short_description: "AdonisJS v7 backend patterns and runbooks"
+  default_prompt: "Use $adonisjs to implement or review an AdonisJS v7 backend task."
+
+policy:
+  allow_implicit_invocation: true

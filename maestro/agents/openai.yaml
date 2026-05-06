@@ -1,0 +1,7 @@
+interface:
+  display_name: "Maestro"
+  short_description: "Orchestrate full-cycle app work"
+  default_prompt: "Use $maestro to classify, plan, implement, verify, and publish an app task."
+
+policy:
+  allow_implicit_invocation: true

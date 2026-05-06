@@ -1,0 +1,7 @@
+interface:
+  display_name: "Inertia React"
+  short_description: "React frontend patterns for AdonisJS Inertia"
+  default_prompt: "Use $inertia-react with $adonisjs to build or review an AdonisJS Inertia React page."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Japa"
+  short_description: "Japa testing patterns for AdonisJS apps"
+  default_prompt: "Use $japa to write, debug, or configure Japa tests in an AdonisJS app."
+
+policy:
+  allow_implicit_invocation: true
