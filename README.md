@@ -1,6 +1,6 @@
 # Skills
 
-Reusable agent skills for AdonisJS, Inertia, Japa, and full-cycle engineering orchestration.
+Reusable agent skills for AdonisJS, Lucid, Inertia, Japa, and full-cycle engineering orchestration.
 
 ## Install
 
@@ -24,6 +24,7 @@ Restart your agent after installing so the new skills are loaded.
 | --- | --- |
 | `maestro` | Orchestrating full-cycle app work: intake, planning, implementation, verification, commit, push, and PR |
 | `adonisjs` | AdonisJS v7 backend work: migrations, models, transformers, controllers, routes, auth, policies, services, events, and review |
+| `lucid` | Lucid ORM and SQL layer: migrations, schema generation, models, relationships, query builders, transactions, factories, and seeders |
 | `inertia-vue` | Vue 3 frontend patterns in AdonisJS + Inertia projects |
 | `inertia-react` | React frontend patterns in AdonisJS + Inertia projects |
 | `japa` | Japa testing in AdonisJS apps: API tests, browser tests, console tests, fakes, swaps, and database setup |
@@ -48,6 +49,7 @@ Examples:
 
 - `/maestro` for phase control and workflow gates
 - `/adonisjs` for backend contracts and routing
+- `/lucid` for migrations, models, relationships, query builders, and factories
 - `/inertia-vue` for frontend page/form patterns
 - `/japa` for test strategy and fixtures
 
@@ -56,7 +58,8 @@ Examples:
 Use a specialized skill directly when the request is narrow:
 
 ```text
-/adonisjs create a Lucid model relationship.
+/adonisjs create a controller, route, and validator for posts.
+/lucid create a migration, model relationship, and factory for posts.
 /japa write a functional test with loginAs.
 /inertia-vue fix this Form component.
 /inertia-react type these generated Data props.
@@ -69,6 +72,7 @@ Each skill is a folder containing a required `SKILL.md` file and optional resour
 ```text
 maestro/
 adonisjs/
+lucid/
 inertia-vue/
 inertia-react/
 japa/
@@ -100,6 +104,7 @@ Keep optional resources (`references/`, `scripts/`, `assets/`, `agents/`) only w
 ## Notes
 
 - These skills assume modern AdonisJS v7 conventions.
+- `lucid` is focused on the ORM/database layer and should be paired with `adonisjs` for controllers, routes, validators, services, and framework-level architecture.
 - `inertia-vue` and `inertia-react` are frontend-layer skills and should be paired with `adonisjs` for backend work.
 - `japa` is focused on testing patterns for AdonisJS apps.
 - `maestro` should be used when a task needs orchestration, phase gates, or publishing workflow discipline.

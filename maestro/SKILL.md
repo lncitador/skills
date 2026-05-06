@@ -23,6 +23,7 @@ Use specialized skills for their owned areas:
 | Skill | Responsibility |
 | --- | --- |
 | `adonisjs` | AdonisJS backend: migrations, models, transformers, controllers, routes, redirects, auth, policies |
+| `lucid` | Lucid ORM/database layer: migrations, schema generation, models, relationships, query builders, transactions, factories, seeders |
 | `inertia-react` | React frontend layer in AdonisJS + Inertia projects |
 | `inertia-vue` | Vue frontend layer in AdonisJS + Inertia projects |
 | `japa` | Japa tests: API, browser, console, fakes, database setup |
@@ -87,7 +88,8 @@ Load the specialized skills before editing the area they own. Keep changes insid
 For AdonisJS + Inertia work, respect the backend-to-frontend typing dependency:
 
 ```text
-adonisjs: transformer.toObject() -> controller: inertia.render('page', { data })
+lucid: migration -> schema generation -> model relationships
+  -> adonisjs: transformer.toObject() -> controller: inertia.render('page', { data })
   -> generated Data.* types
     -> inertia-react/inertia-vue: typed props
       -> UI components and forms
@@ -95,9 +97,10 @@ adonisjs: transformer.toObject() -> controller: inertia.render('page', { data })
 
 Default build order:
 
-1. Backend contract: migration -> model -> transformer -> controller -> routes
-2. Frontend contract: page props -> forms -> navigation -> UI components
-3. Tests: focused unit/functional tests first, browser tests when UI behavior matters
+1. Data contract: migration -> schema generation -> model -> relationships
+2. Backend contract: transformer -> controller -> routes
+3. Frontend contract: page props -> forms -> navigation -> UI components
+4. Tests: focused unit/functional tests first, browser tests when UI behavior matters
 
 Parallelize only when the user explicitly asks for subagents or parallel work, and only after dependencies are clear.
 
