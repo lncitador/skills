@@ -31,6 +31,19 @@ Use specialized skills for their owned areas:
 
 When a repo provides project guides such as `CLAUDE.md`, `AGENTS.md`, `README.md`, or domain skills, read the relevant guide before editing code.
 
+## Runbooks
+
+Use these runbooks for complete feature flows that cross multiple skills:
+
+| Feature | File | Typical skill sequence |
+| --- | --- | --- |
+| Auth — signup, login, email verification, rate limiting | `runbooks/auth.md` | `maestro` -> `lucid` -> `adonisjs` -> `japa` |
+| Full CRUD resource | `runbooks/crud.md` | `maestro` -> `lucid` -> `adonisjs` -> `inertia-*` -> `japa` |
+| File uploads with Drive | `runbooks/file-upload.md` | `maestro` -> `adonisjs` -> `lucid` -> `inertia-*` -> `japa` |
+| Two-Factor Authentication (TOTP + recovery codes) | `runbooks/two-factor-auth.md` | `maestro` -> `lucid` -> `adonisjs` -> `japa` |
+
+Do not treat runbooks as a replacement for specialized skills. A runbook defines the orchestration path; each skill owns its technical details.
+
 ## Phase 1: Intake
 
 Classify the request:

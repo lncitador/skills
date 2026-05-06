@@ -167,17 +167,6 @@ import { controllers } from '#generated/controllers'
 
 ---
 
-## Runbooks
-
-| Feature | File |
-|---|---|
-| Auth — signup, login, email verification, rate limiting | runbooks/auth.md |
-| Full CRUD resource | runbooks/crud.md |
-| Two-Factor Authentication (TOTP + recovery codes) | runbooks/two-factor-auth.md |
-| File uploads with Drive | runbooks/file-upload.md |
-
----
-
 ## References
 
 | Topic | File |
