@@ -7,13 +7,13 @@ Reusable agent skills for AdonisJS, Inertia, Japa, and full-cycle engineering or
 Install the collection with the `skills` CLI:
 
 ```bash
-npx skills add walafffernandes/skills
+npx skills add lncitador/skills
 ```
 
 For a global install:
 
 ```bash
-npx skills add walafffernandes/skills -g --yes
+npx skills add lncitador/skills -g --yes
 ```
 
 Restart your agent after installing so the new skills are loaded.
