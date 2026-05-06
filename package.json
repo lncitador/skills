@@ -12,11 +12,14 @@
   },
   "files": [
     "build",
+    "LICENSE",
     "README.md"
   ],
   "scripts": {
     "build": "tsup",
     "prepack": "npm run build",
+    "release": "release-it",
+    "release:dry-run": "release-it --dry-run",
     "test": "node --import=@poppinss/ts-exec --enable-source-maps bin/test.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -29,6 +32,7 @@
     "@japa/runner": "^5.3.0",
     "@poppinss/ts-exec": "^1.4.4",
     "@types/node": "^25.0.0",
+    "release-it": "^20.0.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.0"
   },

@@ -131,6 +131,18 @@ description: Use when...
 
 Keep optional resources (`references/`, `scripts/`, `assets/`, `agents/`) only when they directly support the skill.
 
+## Release
+
+Releases are created with `release-it`:
+
+```bash
+npm run release
+```
+
+The release command runs typecheck, tests, and build before bumping the package version, creating the release commit, and tagging it as `v<version>`. Pushing the tag triggers GitHub Actions to publish `adonisjs-maestro` to npm.
+
+Configure npm Trusted Publishing for `.github/workflows/publish.yml` before the first release. The workflow uses GitHub OIDC instead of a long-lived npm token.
+
 ## Notes
 
 - These skills assume modern AdonisJS v7 conventions.
