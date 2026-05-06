@@ -110,16 +110,22 @@ export class InstallSkills extends BaseCommand {
     }
 
     if (this.yes) {
-      return []
+      return ['universal']
+    }
+
+    const chooseSpecific = await this.prompt.confirm('Choose specific agents?', { default: false })
+
+    if (!chooseSpecific) {
+      return ['universal']
     }
 
     const selected = await this.prompt.multiple(
       'Which agents should receive the skills?',
       AVAILABLE_AGENTS.map((agent) => ({ name: agent.name, message: agent.label })),
-      { hint: 'Space to toggle, Enter to confirm. Empty = auto-detect installed agents' }
+      { hint: 'Space to toggle, Enter to confirm' }
     )
 
-    return selected
+    return selected.length > 0 ? selected : ['universal']
   }
 
   async #resolveSkills() {
