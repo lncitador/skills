@@ -1,275 +1,118 @@
-# Runbook: Full CRUD Resource
+# Runbook: CRUD Resource
 
-Implements a complete resource with controller, validator, migration, model, and tests.
+Use this runbook for the AdonisJS framework side of a CRUD resource: controller, validator, routes, authorization, redirects/responses, transformers, and tests. For migrations, models, relationships, factories, seeders, and query details, load `lucid`.
 
-**When to use:** Creating a new entity in the system (Post, Product, Invoice, etc.)
+## Step 1 — Data Contract
 
-**Replace `Post`/`post`/`posts`** with your resource name throughout all files.
+If the resource needs a table, model, relationships, factory, or seed data, use `lucid` first.
 
----
+The AdonisJS side should start only after the data shape is clear enough for validators, controllers, and transformers.
 
-## Step 1 — Generate base files via Ace
+## Step 2 — Validator
 
-```bash
-node ace make:model Post -m              # model + migration
-node ace make:controller Post --resource  # controller with 7 methods
-node ace make:validator post             # validators
-```
-
----
-
-## Step 2 — Migration
-
-```ts
-import { BaseSchema } from '@adonisjs/lucid/schema'
-
-export default class extends BaseSchema {
-  protected tableName = 'posts'
-
-  async up() {
-    this.schema.createTable(this.tableName, (table) => {
-      table.increments('id')
-      table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
-      table.string('title').notNullable()
-      table.text('body').notNullable()
-      table.string('slug').notNullable().unique()
-      table.timestamp('published_at').nullable()
-      table.timestamps(true, true)
-    })
-  }
-
-  async down() {
-    this.schema.dropTable(this.tableName)
-  }
-}
-```
-
-```bash
-node ace migration:run
-```
-
----
-
-## Step 3 — Model
-
-`app/models/post.ts`:
-
-> **v7:** Column definitions are auto-generated in `database/schema.ts` when migrations run.
-> The model file only contains relationships and business logic.
-
-```ts
-// database/schema.ts is AUTO-GENERATED — never edit it.
-// It will contain: id, userId, title, body, slug, publishedAt, createdAt, updatedAt
-
-// app/models/post.ts — only relations and business logic
-import { PostSchema } from '#database/schema'
-import { belongsTo, computed } from '@adonisjs/lucid/orm'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-import User from '#models/user'
-
-export default class Post extends PostSchema {
-  @belongsTo(() => User)
-  declare user: BelongsTo<typeof User>
-
-  @computed()
-  get isPublished() {
-    return this.publishedAt !== null
-  }
-}
-```
-
----
-
-## Step 4 — Validators
-
-`app/validators/post.ts`:
+Create separate validators for create and update.
 
 ```ts
 import vine from '@vinejs/vine'
 
-export const createPostValidator = vine.create(
-  vine.object({
-    title: vine.string().trim().minLength(3).maxLength(255),
-    body: vine.string().trim().minLength(10),
-    publishedAt: vine.date().optional(),
-  })
-)
+export const createPostValidator = vine.create({
+  title: vine.string().trim().minLength(3).maxLength(255),
+  body: vine.string().trim().optional(),
+})
 
 export const updatePostValidator = vine.create(
-  vine.object({
-    title: vine.string().trim().minLength(3).maxLength(255).optional(),
-    body: vine.string().trim().minLength(10).optional(),
-    publishedAt: vine.date().optional(),
-  })
+  createPostValidator.schema.clone()
 )
 ```
 
----
+Keep validation in `app/validators/`, not inline in controllers.
 
-## Step 5 — Service (if logic is needed)
+For DB-backed `unique` or `exists` rules, use `lucid` as the data-layer reference.
 
-`app/services/post_service.ts`:
+## Step 3 — Controller
 
-```ts
-import { inject } from '@adonisjs/core'
-import string from '@adonisjs/core/helpers/string'
-import Post from '#models/post'
-import User from '#models/user'
-
-@inject()
-export default class PostService {
-  async create(user: User, data: { title: string; body: string; publishedAt?: Date }) {
-    const slug = string.slug(data.title, { lower: true })
-    return Post.create({ ...data, userId: user.id, slug })
-  }
-
-  async update(post: Post, data: Partial<{ title: string; body: string; publishedAt: Date }>) {
-    if (data.title) {
-      (data as any).slug = string.slug(data.title, { lower: true })
-    }
-    return post.merge(data).save()
-  }
-}
-```
-
----
-
-## Step 6 — Controller
-
-`app/controllers/posts_controller.ts`:
+Controllers should parse request state, validate input, authorize, call model/service APIs, and return a response. Move multi-step business logic to a service.
 
 ```ts
 import type { HttpContext } from '@adonisjs/core/http'
-import { inject } from '@adonisjs/core'
 import Post from '#models/post'
-import PostService from '#services/post_service'
 import PostPolicy from '#policies/post_policy'
 import { createPostValidator, updatePostValidator } from '#validators/post'
 
-@inject()
 export default class PostsController {
-  constructor(private postService: PostService) {}
-
-  async index({ inertia, auth }: HttpContext) {
-    const posts = await Post.query()
-      .where('userId', auth.user!.id)
-      .orderBy('created_at', 'desc')
-    return inertia.render('posts/index', { posts })
+  async index({ inertia }: HttpContext) {
+    return inertia.render('posts/index')
   }
 
-  async create({ inertia }: HttpContext) {
-    return inertia.render('posts/create')
-  }
-
-  async store({ request, auth, response }: HttpContext) {
-    const data = await request.validateUsing(createPostValidator)
-    const post = await this.postService.create(auth.user!, data)
-    return response.redirect().toRoute('posts.show', { id: post.id })
-  }
-
-  async show({ inertia, params, bouncer }: HttpContext) {
-    const post = await Post.query().where('id', params.id).preload('user').firstOrFail()
-    await bouncer.with(PostPolicy).authorize('view', post)
-    return inertia.render('posts/show', { post })
-  }
-
-  async edit({ inertia, params, bouncer }: HttpContext) {
-    const post = await Post.findOrFail(params.id)
-    await bouncer.with(PostPolicy).authorize('edit', post)
-    return inertia.render('posts/edit', { post })
-  }
-
-  async update({ request, params, response, bouncer }: HttpContext) {
-    const post = await Post.findOrFail(params.id)
-    await bouncer.with(PostPolicy).authorize('edit', post)
-    const data = await request.validateUsing(updatePostValidator)
-    await this.postService.update(post, data)
-    return response.redirect().toRoute('posts.show', { id: post.id })
-  }
-
-  async destroy({ params, response, bouncer }: HttpContext) {
-    const post = await Post.findOrFail(params.id)
-    await bouncer.with(PostPolicy).authorize('delete', post)
-    await post.delete()
+  async store({ request, response }: HttpContext) {
+    const payload = await request.validateUsing(createPostValidator)
+    await Post.create(payload)
     return response.redirect().toRoute('posts.index')
+  }
+
+  async update({ bouncer, params, request, response }: HttpContext) {
+    const post = await Post.findOrFail(params.id)
+    await bouncer.with(PostPolicy).authorize('edit', post)
+    const payload = await request.validateUsing(updatePostValidator)
+    await post.merge(payload).save()
+    return response.redirect().toRoute('posts.show', { id: post.id })
   }
 }
 ```
 
----
+If controller queries become complex, move query construction or domain behavior into the data/service layer and use `lucid` for the query/model details.
 
-## Step 7 — Routes
+## Step 4 — Routes
 
-`start/routes.ts`:
+Fixed routes must come before dynamic routes.
 
 ```ts
+import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import { controllers } from '#generated/controllers'
 
-router
-  .resource('posts', controllers.Posts)
-  .use(['create', 'store', 'edit', 'update', 'destroy'], middleware.auth())
+router.get('/posts/create', [controllers.Posts, 'create']).use(middleware.auth())
+router.get('/posts', [controllers.Posts, 'index'])
+router.post('/posts', [controllers.Posts, 'store']).use(middleware.auth())
+router.get('/posts/:id', [controllers.Posts, 'show'])
+router.get('/posts/:id/edit', [controllers.Posts, 'edit']).use(middleware.auth())
+router.put('/posts/:id', [controllers.Posts, 'update']).use(middleware.auth())
+router.delete('/posts/:id', [controllers.Posts, 'destroy']).use(middleware.auth())
 ```
 
----
+## Step 5 — Authorization
 
-## Step 8 — Tests
+Use Bouncer policies for ownership and role checks.
 
 ```ts
-import { test } from '@japa/runner'
-import Post from '#models/post'
-import UserFactory from '#database/factories/user_factory'
-
-test.group('Posts / CRUD', (group) => {
-  group.each.setup(async () => { await db.beginGlobalTransaction() })
-  group.each.teardown(async () => { await db.rollbackGlobalTransaction() })
-
-  test('creates post when authenticated', async ({ client, assert }) => {
-    const user = await UserFactory.create()
-    const response = await client
-      .post('/posts')
-      .loginAs(user)
-      .json({ title: 'My first post', body: 'Content of the post right here' })
-
-    response.assertRedirectsTo('/posts')
-    const post = await Post.findBy('title', 'My first post')
-    assert.isNotNull(post)
-    assert.equal(post!.userId, user.id)
-  })
-
-  test('cannot edit another user post', async ({ client }) => {
-    const owner = await UserFactory.create()
-    const other = await UserFactory.create()
-    const post = await Post.create({ userId: owner.id, title: 'Owner', body: 'Content here', slug: 'owner' })
-
-    const response = await client
-      .put(`/posts/${post.id}`)
-      .loginAs(other)
-      .json({ title: 'Hacked' })
-
-    response.assertStatus(403)
-  })
-
-  test('deletes own post', async ({ client, assert }) => {
-    const user = await UserFactory.create()
-    const post = await Post.create({ userId: user.id, title: 'Delete me', body: 'Content here', slug: 'delete-me' })
-
-    const response = await client.delete(`/posts/${post.id}`).loginAs(user)
-    response.assertRedirectsTo('/posts')
-    assert.isNull(await Post.find(post.id))
-  })
-})
+await bouncer.with(PostPolicy).authorize('edit', post)
 ```
 
----
+Use `.authorize()` in controllers and `.allows()` in transformers or places where boolean permission flags are needed.
 
-## Final checklist
+## Step 6 — Transformers
 
-- [ ] Migration with FKs and timestamps
-- [ ] Model with declared relations
-- [ ] Validators in `app/validators/` — never inline
-- [ ] Business logic in `PostService`, not in the controller
-- [ ] Controller with exactly 7 resourceful methods
-- [ ] Authorization with Bouncer before edit/delete
-- [ ] Routes with `.use(middleware.auth())` on actions that require login
-- [ ] Tests cover creation, access denied, and deletion
+Use transformers to shape backend data for HTTP/Inertia clients. Transformers should not issue queries. Preload required data before transforming; use `lucid` for preload/query details.
+
+## Step 7 — Tests
+
+Use `japa` for test structure and `lucid` for factories/database state.
+
+Cover:
+
+- Happy path
+- Validation failure
+- Unauthorized/forbidden access
+- Not found behavior
+- Redirect/response shape
+
+## Checklist
+
+- [ ] Data-layer work handled with `lucid`
+- [ ] Validators are separate files
+- [ ] Controller stays thin
+- [ ] Routes are ordered fixed-before-dynamic
+- [ ] Protected writes use `middleware.auth()`
+- [ ] Ownership/role checks use Bouncer
+- [ ] Transformers do not query
+- [ ] Tests cover success and failure paths

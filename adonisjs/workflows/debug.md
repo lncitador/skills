@@ -120,7 +120,7 @@ async index({ auth, logger }: HttpContext) {
 
 ### E_ROW_NOT_FOUND (ModelNotFoundException)
 
-**Cause:** `Model.findOrFail()` found no record.
+**Cause:** `Model.findOrFail()` found no record. Use `lucid` for model/query-specific diagnosis.
 
 ```ts
 // 1. Let the global handler return 404 automatically
@@ -145,29 +145,9 @@ async handle(error: unknown, ctx: HttpContext) {
 
 ---
 
-### N+1 queries (slow page, many queries in log)
+### N+1 queries, stale schema, migration failures, or transaction issues
 
-**Diagnose:** Enable query logging in `.env`:
-```
-DB_DEBUG=true
-```
-
-**Symptom in log:** Same query repeated many times with different IDs.
-
-```ts
-// N+1
-const posts = await Post.all()
-// post.user.name in template → 1 query per post
-
-// Eager loading
-const posts = await Post.query().preload('user')
-
-// Conditional preload
-const posts = await Post.query()
-  .preload('user')
-  .preload('comments', (q) => q.preload('user').limit(3))
-  .if(request.input('withTags'), (q) => q.preload('tags'))
-```
+Use the `lucid` skill. Those are data-layer problems.
 
 ---
 
@@ -176,11 +156,9 @@ const posts = await Post.query()
 ```ts
 // WRONG
 import { HttpContext } from '@adonisjs/core'
-import { BaseModel } from '@adonisjs/core'
 
 // CORRECT
 import type { HttpContext } from '@adonisjs/core/http'
-import { BaseModel } from '@adonisjs/lucid/orm'
 import { inject } from '@adonisjs/core'
 import router from '@adonisjs/core/services/router'
 ```
@@ -189,7 +167,7 @@ import router from '@adonisjs/core/services/router'
 
 ### Cannot read properties of undefined in tests
 
-**Cause:** DB state not reset between tests, or relation not preloaded.
+**Cause:** Test state, fixture setup, or data loading problem. Use `japa` for test structure and `lucid` for DB/factory/model specifics.
 
 ```ts
 test.group('MyGroup', (group) => {
@@ -202,17 +180,6 @@ test.group('MyGroup', (group) => {
 })
 ```
 
-**Undefined relation in test:**
-```ts
-// WRONG — post.user.name → undefined if not preloaded
-const post = await Post.findOrFail(1)
-console.log(post.user.name) // ERROR
-
-// CORRECT — always preload in tests that use relations
-const post = await Post.query().where('id', 1).preload('user').firstOrFail()
-```
-
----
 
 ### Inertia returning JSON instead of rendering page
 
@@ -232,14 +199,7 @@ async index({ inertia }: HttpContext) {
 
 ### Migration failing / table already exists
 
-```bash
-node ace migration:status
-node ace migration:rollback
-node ace migration:rollback --batch=0  # full reset (DEV ONLY)
-node ace migration:run
-```
-
-**Never edit a migration that has already run in production.** Create a new one with `ALTER TABLE`.
+Use `lucid` for migration and schema-generation recovery.
 
 ---
 
@@ -249,13 +209,10 @@ node ace migration:run
 # See all registered routes
 node ace list:routes
 
-# Interactive REPL with access to models
+# Interactive REPL
 node ace repl
-> const { default: User } = await import('#models/user')
-> await User.all()
 
-# See SQL queries in real time
-DB_DEBUG=true node ace serve --watch
+# Use `lucid` for SQL/query debugging
 ```
 
 **Temporary verbose logging in exception handler:**

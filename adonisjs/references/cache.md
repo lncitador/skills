@@ -15,7 +15,7 @@ import cache from '@adonisjs/cache/services/main'
 const posts = await cache.getOrSet({
   key: 'featured_posts',
   ttl: '1 hour',
-  factory: () => Post.query().where('featured', true).preload('user').limit(6),
+  factory: () => buildFeaturedPosts(),
 })
 
 // Per user

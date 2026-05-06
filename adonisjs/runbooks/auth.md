@@ -1,192 +1,78 @@
-# Runbook: Full Auth
+# Runbook: Auth
 
-Implements signup, login, logout, email verification, and rate limiting from scratch.
+Use this runbook for the AdonisJS auth flow: routes, controllers, validators, middleware, redirects, Bouncer boundaries, mail/events, and session behavior. Use `lucid` for users table/model/factory details and `japa` for tests.
 
-**When to use:** Adding authentication to an AdonisJS project that does not have it yet.
+## Data Prerequisite
 
-**Prerequisites:** `node ace add @adonisjs/auth`, `node ace add @adonisjs/mail`, `node ace add @adonisjs/limiter`
+Before wiring controllers, make sure the user data contract exists. Use `lucid` for:
 
----
+- Users migration
+- User model and auth finder mixin shape
+- Email verification columns
+- Password/token serialization
+- User factories
 
-## Step 1 — Users migration
+## Routes
 
-Create `database/migrations/TIMESTAMP_create_users_table.ts`:
-
-```ts
-import { BaseSchema } from '@adonisjs/lucid/schema'
-
-export default class extends BaseSchema {
-  protected tableName = 'users'
-
-  async up() {
-    this.schema.createTable(this.tableName, (table) => {
-      table.increments('id')
-      table.string('full_name').nullable()
-      table.string('email', 254).notNullable().unique()
-      table.string('password').notNullable()
-      table.boolean('email_verified').defaultTo(false)
-      table.string('email_verification_token').nullable()
-      table.timestamps(true, true)
-    })
-  }
-
-  async down() {
-    this.schema.dropTable(this.tableName)
-  }
-}
-```
-
-Run: `node ace migration:run`
-
----
-
-## Step 2 — User model
-
-`app/models/user.ts`:
+Guest-only routes:
 
 ```ts
-import { DateTime } from 'luxon'
-import hash from '@adonisjs/core/services/hash'
-import { compose } from '@adonisjs/core/helpers'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
-import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
-
-const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
-  uids: ['email'],
-  passwordColumnName: 'password',
-})
-
-export default class User extends compose(BaseModel, AuthFinder) {
-  @column({ isPrimary: true })
-  declare id: number
-
-  @column()
-  declare fullName: string | null
-
-  @column()
-  declare email: string
-
-  @column({ serializeAs: null })
-  declare password: string
-
-  @column()
-  declare emailVerified: boolean
-
-  @column({ serializeAs: null })
-  declare emailVerificationToken: string | null
-
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
-}
+router.group(() => {
+  router.get('/login', [controllers.Session, 'create'])
+  router.post('/login', [controllers.Session, 'store'])
+  router.get('/register', [controllers.Registration, 'create'])
+  router.post('/register', [controllers.Registration, 'store'])
+}).use(middleware.guest())
 ```
 
----
+Authenticated routes:
 
-## Step 3 — Validators
+```ts
+router.group(() => {
+  router.delete('/logout', [controllers.Session, 'destroy'])
+  router.get('/email/verify', [controllers.EmailVerification, 'notice'])
+  router.post('/email/verification-notification', [controllers.EmailVerification, 'send'])
+}).use(middleware.auth())
+```
 
-`app/validators/auth.ts`:
+Email verification callbacks must be public if the user may arrive from an email link without an active session.
+
+## Validators
+
+Keep login/register validators in `app/validators`.
 
 ```ts
 import vine from '@vinejs/vine'
 
-export const signupValidator = vine.create(
-  vine.object({
-    fullName: vine.string().trim().minLength(2).maxLength(100),
-    email: vine.string().email().normalizeEmail(),
-    password: vine.string().minLength(8).confirmed(),
-  })
-)
+export const loginValidator = vine.create({
+  email: vine.string().trim().email().normalizeEmail(),
+  password: vine.string().minLength(8),
+})
 
-export const loginValidator = vine.create(
-  vine.object({
-    email: vine.string().email().normalizeEmail(),
-    password: vine.string().minLength(1),
-  })
-)
-```
-
----
-
-## Step 4 — Rate limiting
-
-`start/limiter.ts`:
-
-```ts
-import limiter from '@adonisjs/limiter/services/main'
-
-export const authLimiter = limiter.define('auth', (ctx) => {
-  return limiter
-    .allowRequests(5)
-    .every('1 minute')
-    .usingKey(`auth_${ctx.request.ip()}`)
-    .limitExceeded((error) => {
-      error.setMessage('Too many attempts. Please wait 1 minute.')
-      error.setStatus(429)
-    })
+export const registerValidator = vine.create({
+  fullName: vine.string().trim().minLength(2).maxLength(120),
+  email: vine.string().trim().email().normalizeEmail(),
+  password: vine.string().minLength(8).confirmed(),
 })
 ```
 
----
+For DB-backed unique/exists rules, use `lucid`.
 
-## Step 5 — Controllers
-
-### app/controllers/new_account_controller.ts (signup)
+## Session Controller
 
 ```ts
 import type { HttpContext } from '@adonisjs/core/http'
-import User from '#models/user'
-import { signupValidator } from '#validators/auth'
-import mail from '@adonisjs/mail/services/main'
-import string from '@adonisjs/core/helpers/string'
-
-export default class NewAccountController {
-  async create({ inertia }: HttpContext) {
-    return inertia.render('auth/signup')
-  }
-
-  async store({ request, auth, response }: HttpContext) {
-    const data = await request.validateUsing(signupValidator)
-    const token = string.generateRandom(64)
-
-    const user = await User.create({ ...data, emailVerificationToken: token })
-
-    await mail.sendLater((message) => {
-      message
-        .to(user.email)
-        .subject('Confirm your email')
-        .htmlView('emails/verify_email', { user, token })
-    })
-
-    await auth.use('web').login(user)
-    return response.redirect().toRoute('email.verification.notice')
-  }
-}
-```
-
-### app/controllers/session_controller.ts (login/logout)
-
-```ts
-import type { HttpContext } from '@adonisjs/core/http'
-import User from '#models/user'
 import { loginValidator } from '#validators/auth'
+import User from '#models/user'
 
 export default class SessionController {
   async create({ inertia }: HttpContext) {
     return inertia.render('auth/login')
   }
 
-  async store({ request, auth, response, session }: HttpContext) {
+  async store({ request, auth, response }: HttpContext) {
     const { email, password } = await request.validateUsing(loginValidator)
     const user = await User.verifyCredentials(email, password)
-
-    if (!user.emailVerified) {
-      session.flash('error', 'Please verify your email before signing in.')
-      return response.redirect().back()
-    }
-
     await auth.use('web').login(user)
     return response.redirect().toRoute('dashboard')
   }
@@ -198,139 +84,41 @@ export default class SessionController {
 }
 ```
 
-### app/controllers/email_verification_controller.ts
+## Registration Controller
+
+Keep persistence and domain details small. If registration has multiple side effects, move them into a service and emit events/listeners for mail.
 
 ```ts
-import type { HttpContext } from '@adonisjs/core/http'
-import User from '#models/user'
-
-export default class EmailVerificationController {
-  // Notice page: "Check your email" — PUBLIC ROUTE
-  async notice({ inertia }: HttpContext) {
-    return inertia.render('auth/verify_email_notice')
-  }
-
-  // Link handler from email — PUBLIC ROUTE
-  async verify({ params, response, session }: HttpContext) {
-    const user = await User.findByOrFail('emailVerificationToken', params.token)
-    user.emailVerified = true
-    user.emailVerificationToken = null
-    await user.save()
-
-    session.flash('success', 'Email confirmed! Please sign in.')
-    return response.redirect().toRoute('login')
-  }
-
-  // Resend verification email — requires auth
-  async resend({ auth, response, session }: HttpContext) {
-    const user = auth.getUserOrFail()
-    // ... resend email logic
-    session.flash('success', 'Email resent!')
-    return response.redirect().back()
+export default class RegistrationController {
+  async store({ request, auth, response }: HttpContext) {
+    const payload = await request.validateUsing(registerValidator)
+    const user = await usersService.register(payload)
+    await auth.use('web').login(user)
+    return response.redirect().toRoute('dashboard')
   }
 }
 ```
 
----
+## Email Verification
 
-## Step 6 — Routes
+Use signed URLs for verification links. Keep mail sending in mail classes/listeners, not inline in controllers.
 
-`start/routes.ts`:
+## Middleware
 
-```ts
-import router from '@adonisjs/core/services/router'
-import { middleware } from '#start/kernel'
-import { authLimiter } from '#start/limiter'
-import { controllers } from '#generated/controllers'
+Use `middleware.auth()` for authenticated routes and `middleware.guest()` for routes only anonymous users should access.
 
-// Auth — PUBLIC routes
-router.get('/signup', [controllers.NewAccount, 'create']).as('signup')
-router.post('/signup', [controllers.NewAccount, 'store']).as('signup.store').use(authLimiter)
+If an area requires verified email, create or use a dedicated middleware that checks the authenticated user and redirects to the verification notice.
 
-router.get('/login', [controllers.Session, 'create']).as('login')
-router.post('/login', [controllers.Session, 'store']).as('login.store').use(authLimiter)
+## Tests
 
-// Email verification — PUBLIC (token is in the link)
-router.get('/email/verify', [controllers.EmailVerification, 'notice']).as('email.verification.notice')
-router.get('/email/verify/:token', [controllers.EmailVerification, 'verify']).as('email.verification.verify')
+Use `japa` for API/browser test patterns and `lucid` for users/factories/database state.
 
-// Resend verification — requires being logged in
-router
-  .post('/email/verify/resend', [controllers.EmailVerification, 'resend'])
-  .as('email.verification.resend')
-  .use(middleware.auth())
+Cover:
 
-// Logout — requires auth
-router.delete('/logout', [controllers.Session, 'destroy']).as('logout').use(middleware.auth())
-```
-
----
-
-## Step 7 — Email template
-
-`resources/views/emails/verify_email.edge`:
-
-```html
-<h1>Confirm your email</h1>
-<p>Hi {{ user.fullName }},</p>
-<p>
-  <a href="{{ urlFor('email.verification.verify', { token }) }}">
-    Click here to confirm your email
-  </a>
-</p>
-```
-
----
-
-## Step 8 — Tests
-
-```ts
-import { test } from '@japa/runner'
-import User from '#models/user'
-import UserFactory from '#database/factories/user_factory'
-
-test.group('Auth / Signup', (group) => {
-  group.each.setup(async () => { await db.beginGlobalTransaction() })
-  group.each.teardown(async () => { await db.rollbackGlobalTransaction() })
-
-  test('creates user and redirects to email verification notice', async ({ client }) => {
-    const response = await client.post('/signup').json({
-      fullName: 'John Smith',
-      email: 'john@example.com',
-      password: 'password123',
-      password_confirmation: 'password123',
-    })
-    response.assertRedirectsTo('/email/verify')
-    const user = await User.findByOrFail('email', 'john@example.com')
-    assert.isFalse(user.emailVerified)
-  })
-})
-
-test.group('Auth / Login', (group) => {
-  test('blocks login without verified email', async ({ client }) => {
-    const user = await UserFactory.merge({ emailVerified: false }).create()
-    const response = await client.post('/login').json({ email: user.email, password: 'password123' })
-    response.assertRedirectsTo('/login')
-  })
-
-  test('logs in with valid credentials', async ({ client }) => {
-    const user = await UserFactory.merge({ emailVerified: true }).create()
-    const response = await client.post('/login').json({ email: user.email, password: 'password123' })
-    response.assertRedirectsTo('/dashboard')
-  })
-})
-```
-
----
-
-## Final checklist
-
-- [ ] Migration ran
-- [ ] Model with `withAuthFinder` and `emailVerified`
-- [ ] Validators in a separate file
-- [ ] Rate limiting on login and signup
-- [ ] Email verification routes are PUBLIC
-- [ ] Signup controller auto-logs in the user after registration
-- [ ] Login controller blocks unverified email
-- [ ] Email sent with `mail.sendLater` (non-blocking)
-- [ ] Tests cover happy path and email-not-verified blocking
+- Register success
+- Login success
+- Invalid credentials
+- Logout
+- Guest-only redirect for authenticated users
+- Auth-only redirect for guests
+- Email verification happy path when enabled

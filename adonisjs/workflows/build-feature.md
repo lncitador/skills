@@ -12,7 +12,7 @@ Before opening any file, answer these questions:
 
 1. **What does the user want to do?** (use case, not technology)
 2. **Who can do this?** (authenticated? specific role?)
-3. **What changes in the database?** (new table, columns, relations)
+3. **Does persisted data change?** If yes, load `lucid` for migrations, models, relations, factories, and transactions.
 4. **What are the edge cases?** (duplicate, not found, permission denied)
 5. **Are there side effects?** (email, event, queue job, cache invalidation)
 
@@ -38,7 +38,7 @@ Question: does this behavior fit in the 7 CRUD methods?
 ```
 Controller → receives request, validates, calls, returns response
 Service    → business logic with more than 2-3 steps
-Model      → queries and relations, nothing HTTP-related
+Model      → domain/data behavior; load `lucid` for model and query rules
 ```
 
 **Practical rule:** if you need more than 5 lines of logic in the controller beyond validation and redirect, move it to a Service.
@@ -57,19 +57,17 @@ Never directly in the controller
 Always follow this sequence — do not skip steps:
 
 ```
-1. Migration      → defines the schema
-2. Model          → defines relations and columns
-3. Validator      → defines what the user can send
-4. Service        → business logic (if needed)
-5. Controller     → HTTP: parse → validate → call → respond
-6. Routes         → register and protect
-7. View/Page      → frontend (Edge or Inertia)
-8. Tests          → verify the complete flow
+1. Data layer      → use `lucid` if schema, models, relations, queries, factories, or transactions change
+2. Validator       → defines what the user can send
+3. Service         → business logic (if needed)
+4. Controller      → HTTP: parse → validate → call → respond
+5. Routes          → register and protect
+6. View/Page       → frontend (Edge or Inertia)
+7. Tests           → verify the complete flow
 ```
 
 **Ace commands to speed up:**
 ```bash
-node ace make:model ModelName -m    # model + migration
 node ace make:controller Name --resource
 node ace make:validator name
 node ace make:service NameService
@@ -94,10 +92,9 @@ node ace make:listener NameListener
 - [ ] Side effects (email, event) are not in the controller
 - [ ] Model does not import `HttpContext` or do redirects
 
-### Database
-- [ ] Migration has `onDelete` on all FKs
-- [ ] Migration has `timestamps(true, true)`
-- [ ] Indexes on most-queried columns (email, slug, user_id)
+### Data layer
+- [ ] If persisted data changed, `lucid` was used for migrations/models/queries/fixtures
+- [ ] Controller/service code does not hide schema or query rules that belong in the data layer
 
 ### Quality
 - [ ] Tests cover the happy path
@@ -128,7 +125,7 @@ Each sub-feature has its own controller, validator, and tests.
 ### Phase 1
 - Toggle favorite/unfavorite on a post
 - Requires auth
-- New `post_favorites` table (user_id, post_id)
+- New `post_favorites` table (handled with `lucid`)
 - No side effects
 
 ### Phase 2
@@ -144,18 +141,12 @@ router.delete('/posts/:postId/favorites', [controllers.PostFavorites, 'destroy']
 
 // controller
 async store({ auth, params, response }: HttpContext) {
-  await PostFavorite.firstOrCreate({
-    userId: auth.user!.id,
-    postId: params.postId,
-  })
+  await favoritesService.favorite(auth.user!, params.postId)
   return response.redirect().back()
 }
 
 async destroy({ auth, params, response }: HttpContext) {
-  await PostFavorite.query()
-    .where('userId', auth.user!.id)
-    .where('postId', params.postId)
-    .delete()
+  await favoritesService.unfavorite(auth.user!, params.postId)
   return response.redirect().back()
 }
 ```

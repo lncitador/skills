@@ -57,18 +57,16 @@ export default class OrdersController {
 ```ts
 // WRONG — most common mistakes
 import { HttpContext } from '@adonisjs/core'
-import { BaseModel } from '@adonisjs/core'
-import { column } from '@adonisjs/lucid'
 
 // CORRECT
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
-import type { HasMany } from '@adonisjs/lucid/types/relations'
 import router from '@adonisjs/core/services/router'
 import hash from '@adonisjs/core/services/hash'
 import vine from '@vinejs/vine'
 ```
+
+For Lucid model/query imports and model-specific conventions, use the `lucid` skill.
 
 ---
 
@@ -106,76 +104,15 @@ await User.create(data)
 
 ---
 
-## 4. Database — queries and N+1
+## 4. Data layer — use `lucid`
 
-```ts
-// N+1 query
-const posts = await Post.all()
-for (const post of posts) {
-  const user = await post.related('user').query().first()  // 1 query per post!
-}
-// Fixed:
-const posts = await Post.query().preload('user')
+When the review touches migrations, models, relationships, query builders, transactions, factories, seeders, N+1 issues, serialization on models, or database indexes, load the `lucid` skill and review those concerns there.
 
-// ---
-
-// SELECT * when only a few fields are needed
-const users = await User.all()  // loads password, tokens, etc.
-// Fixed:
-const users = await User.query().select('id', 'full_name', 'email')
-
-// ---
-
-// FK without onDelete
-table.integer('user_id').references('id').inTable('users')
-// Fixed:
-table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
-```
+Keep the AdonisJS review focused on framework boundaries: controllers, validators, routes, middleware, policies, services, events, exceptions, and response behavior.
 
 ---
 
-## 5. Model — common issues
-
-```ts
-// Exposing sensitive columns in serialization
-export default class User extends BaseModel {
-  @column()
-  declare password: string  // exposed in toJSON()!
-
-  @column()
-  declare emailVerificationToken: string  // same
-}
-// Fixed:
-@column({ serializeAs: null })
-declare password: string
-
-@column({ serializeAs: null })
-declare emailVerificationToken: string
-
-// ---
-
-// HTTP logic in model
-export default class Post extends BaseModel {
-  async publish(ctx: HttpContext) {  // model does not know HttpContext
-    ctx.session.flash('success', 'Published!')
-  }
-}
-// Fixed — pure domain logic in model:
-export default class Post extends BaseModel {
-  get isPublished() {
-    return this.publishedAt !== null
-  }
-
-  async publish() {
-    this.publishedAt = DateTime.now()
-    await this.save()
-  }
-}
-```
-
----
-
-## 6. Validators — conventions
+## 5. Validators — conventions
 
 ```ts
 // No trim on strings
@@ -208,7 +145,7 @@ export const updatePostValidator = vine.create(
 
 ---
 
-## 7. Routes — organization
+## 6. Routes — organization
 
 ```ts
 // Scattered routes without organization
@@ -248,7 +185,7 @@ test('creates post', async ({ client }) => {
 
 // Fixed — test verifies the actual effect:
 test('creates post and persists in DB', async ({ client, assert }) => {
-  const user = await UserFactory.create()
+  const user = await makeUserWithLucidFactory()
 
   const response = await client
     .post('/posts')

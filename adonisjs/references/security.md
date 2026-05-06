@@ -7,17 +7,9 @@ import hash from '@adonisjs/core/services/hash'
 
 const hashed = await hash.make('user_password')
 const isValid = await hash.verify(hashed, 'typed_password')
-
-// In model — auto-hash with beforeSave
-import { beforeSave } from '@adonisjs/lucid/orm'
-
-@beforeSave()
-static async hashPassword(user: User) {
-  if (user.$dirty.password) {
-    user.password = await hash.make(user.password)
-  }
-}
 ```
+
+For model hooks that auto-hash password fields before save, use the `lucid` skill.
 
 **Default driver:** `scrypt` (recommended). Configure in `config/hash.ts`.
 
@@ -133,6 +125,6 @@ The application will not start if a required variable is missing.
 - [ ] Reversible sensitive data encrypted with `encryption.encrypt()`
 - [ ] CORS configured with explicit origins in production — never `origin: true` in prod
 - [ ] CSRF enabled for web apps, excepting only API/webhook routes
-- [ ] Password and token columns with `serializeAs: null` on the model
+- [ ] Password and token model serialization handled with `lucid`
 - [ ] `.env` in `.gitignore` — never commit secrets
 - [ ] Env vars validated in `start/env.ts` — app fails to start with missing vars

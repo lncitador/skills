@@ -98,29 +98,7 @@ vine.string().optional().nullable() // both
 
 ## DB-aware validation (unique, exists)
 
-```ts
-import vine from '@vinejs/vine'
-import { VineLucid } from '@adonisjs/lucid/vine'
-
-export const createUserValidator = vine.create({
-  email: vine.string().email().normalizeEmail()
-    .use(VineLucid.unique({ table: 'users', column: 'email' })),
-
-  categoryId: vine.number()
-    .use(VineLucid.exists({ table: 'categories', column: 'id' })),
-})
-
-// For updates — ignore own record in unique check
-export const updateUserValidator = (userId: number) =>
-  vine.create({
-    email: vine.string().email()
-      .use(VineLucid.unique({
-        table: 'users',
-        column: 'email',
-        whereNot: { id: userId },
-      })),
-  })
-```
+Use `lucid` for database-backed Vine rules such as unique/exists. Keep this file focused on Vine schema shape, request validation, messages, optional/nullable semantics, and controller usage.
 
 ## Password confirmation
 

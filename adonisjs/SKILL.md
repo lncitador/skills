@@ -1,34 +1,23 @@
 ---
 name: adonisjs
 description: >
-  Use this skill whenever the user is working with AdonisJS v7 backend — controllers, Lucid ORM, VineJS validators, Transformers, Bouncer policies, migrations, models, events, middleware, Ace commands, services, or any backend feature. Trigger for "create a controller", "write a migration", "set up auth", "add validation", "create a service", "write tests with Japa", "add a policy", or any AdonisJS backend task. Also trigger when reviewing AdonisJS code or debugging backend errors. This skill is frontend-agnostic — it works regardless of whether the project uses Inertia, Edge templates, or serves a JSON API. For Inertia-specific frontend patterns, use the inertia-react or inertia-vue skill alongside this one. For writing tests with Japa, use the japa skill.
+  Use this skill whenever the user is working with AdonisJS v7 backend framework code: controllers, routes, middleware, services, VineJS validators, Transformers, Bouncer policies, events, listeners, mail, cache, queue, exceptions, Ace commands, request/response/session handling, or backend architecture and review. Trigger for "create a controller", "add validation", "create a service", "add a policy", "wire routes", "handle an exception", or AdonisJS backend review/debugging. For Lucid ORM, migrations, schema generation, models, relationships, query builders, transactions, factories, or seeders, use the lucid skill alongside or instead of this one. For Japa tests, use the japa skill. For Inertia frontend patterns, use inertia-react or inertia-vue alongside this one.
 ---
 
 # AdonisJS Backend Skill
 
-## CRITICAL: v7 Model Pattern
+## Boundary With Lucid
 
-Models do NOT define columns. Columns are auto-generated in `database/schema.ts` when
-you run migrations. Model files only contain relationships and business logic.
+This skill covers the AdonisJS framework layer. Load `lucid` for database and ORM work:
 
-```ts
-// database/schema.ts — AUTO-GENERATED. Never edit manually.
-export class PostSchema extends BaseModel {
-  @column({ isPrimary: true }) declare id: number
-  @column() declare title: string
-  // all columns here, auto-generated from migrations
-}
+- Migrations and schema generation
+- `database/schema.ts`
+- Model files and model hooks/scopes/serialization
+- Relationships and preloads
+- Query builders and transactions
+- Factories and seeders
 
-// app/models/post.ts — YOUR file. Only relationships + business logic.
-import { PostSchema } from '#database/schema'
-import { hasMany, belongsTo } from '@adonisjs/lucid/orm'
-import type { HasMany, BelongsTo } from '@adonisjs/lucid/types/relations'
-
-export default class Post extends PostSchema {
-  @hasMany(() => Comment) declare comments: HasMany<typeof Comment>
-  @belongsTo(() => User) declare user: BelongsTo<typeof User>
-}
-```
+AdonisJS controllers, transformers, policies, and services may consume Lucid models, but the rules for defining/querying those models live in `lucid`.
 
 ---
 
@@ -59,28 +48,28 @@ router.group(() => {
 
 ```ts
 import type { HttpContext } from '@adonisjs/core/http'
-import Post from '#models/post'
 import PostTransformer from '#transformers/post_transformer'
 import PostPolicy from '#policies/post_policy'
 import { createPostValidator } from '#validators/post'
+import postsService from '#services/posts_service'
 
 export default class PostsController {
   async index({ inertia }: HttpContext) {   // swap inertia for view/serialize per architecture
-    const posts = await Post.query().preload('user').orderBy('createdAt', 'desc')
+    const posts = await postsService.listForIndex()
     return inertia.render('posts/index', { posts: PostTransformer.transform(posts) })
   }
 
   async store({ request, auth, response }: HttpContext) {
     const payload = await request.validateUsing(createPostValidator)
-    await Post.create({ ...payload, userId: auth.user!.id })
+    await postsService.create(auth.user!, payload)
     return response.redirect().toRoute('posts.index')
   }
 
   async update({ bouncer, params, request, response, session }: HttpContext) {
-    const post = await Post.findOrFail(params.id)
+    const post = await postsService.findForUpdate(params.id)
     await bouncer.with(PostPolicy).authorize('edit', post)  // throws 403 if denied
     const data = await request.validateUsing(updatePostValidator)
-    await post.merge(data).save()
+    await postsService.update(post, data)
     session.flash('success', 'Post updated successfully')
     return response.redirect().toRoute('posts.show', { id: post.id })
   }
@@ -154,15 +143,12 @@ import { HttpContext } from '@adonisjs/core'
 // CORRECT sub-path imports
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
-import { hasMany, belongsTo } from '@adonisjs/lucid/orm'
-import type { HasMany, BelongsTo } from '@adonisjs/lucid/types/relations'
 import { BaseTransformer } from '@adonisjs/core/transformers'
 import { BasePolicy } from '@adonisjs/bouncer'
 import router from '@adonisjs/core/services/router'
 import { urlFor, signedUrlFor } from '@adonisjs/core/services/url_builder'
 import vine from '@vinejs/vine'
 import Post from '#models/post'
-import { PostSchema } from '#database/schema'
 import { controllers } from '#generated/controllers'
 ```
 
@@ -205,9 +191,7 @@ import { controllers } from '#generated/controllers'
 | HTTP — request, response, session, URL builder | references/http.md |
 | Mail — send, mail classes, templates, testing | references/mail.md |
 | Middleware — named, params, global | references/middleware.md |
-| Migrations, column types, schema.ts auto-generation | references/migrations.md |
-| Models — relations only, extends PostSchema (v7) | references/models.md |
-| Performance, N+1, pagination, indexes | references/performance.md |
+| Performance — cache, queues, deferred expensive work | references/performance.md |
 | Queue, jobs, retry, workers | references/queue.md |
 | Security — hashing, encryption, CORS, CSRF | references/security.md |
 | Transformers — BaseTransformer, pick, whenLoaded, variants | references/transformers.md |
@@ -220,7 +204,6 @@ import { controllers } from '#generated/controllers'
 
 ```bash
 node ace make:controller Post --resource
-node ace make:model Post -m
 node ace make:validator post
 node ace make:transformer post
 node ace make:policy post
@@ -232,12 +215,6 @@ node ace make:middleware AuthMiddleware
 node ace make:exception DomainException
 node ace make:command SendReminders
 node ace make:mail OrderConfirmation
-node ace make:factory Post
-node ace make:seeder PostSeeder
-node ace migration:run
-node ace migration:rollback
-node ace migration:status
-node ace db:seed
 node ace list:routes
 node ace repl
 node ace generate:key
@@ -250,16 +227,12 @@ node ace generate:key
 
 | Wrong | Correct |
 |---|---|
-| `@column()` in model file | Columns in migrations → auto-generated in schema.ts |
-| `class Post extends BaseModel` | `class Post extends PostSchema` from `#database/schema` |
 | `vine.compile()` | `vine.create()` |
 | Inline validation in controller | Separate `app/validators/` file |
 | Business logic in controller | Move to `app/services/` |
 | Side effects (email) in controller | Events + Listeners |
 | `import from '@adonisjs/core'` directly | Sub-path: `'@adonisjs/core/http'` etc. |
-| Accessing relation without preload in loop | `preload()` before the loop |
 | 8+ methods on one controller | Split into focused Action controllers |
-| `Model.all()` in production list routes | Always paginate |
 | Email verification behind auth middleware | Verification routes must be public |
 | Dynamic route (`:id`) before fixed route (`/create`) | Fixed routes first |
 | `bouncer.authorize()` in transformers | `bouncer.allows()` in transformers |

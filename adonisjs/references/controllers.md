@@ -40,16 +40,14 @@ router.post('/posts/:id/publish', [controllers.PublishPost, 'store']).use(middle
 
 ```ts
 import type { HttpContext } from '@adonisjs/core/http'
-import Post from '#models/post'
 import PostTransformer from '#transformers/post_transformer'
 import PostPolicy from '#policies/post_policy'
 import { createPostValidator, updatePostValidator } from '#validators/post'
+import postsService from '#services/posts_service'
 
 export default class PostsController {
   async index({ inertia }: HttpContext) {
-    const posts = await Post.query()
-      .preload('user')
-      .orderBy('createdAt', 'desc')
+    const posts = await postsService.listForIndex()
 
     return inertia.render('posts/index', {
       posts: PostTransformer.transform(posts),
@@ -63,22 +61,13 @@ export default class PostsController {
   async store({ request, auth, response }: HttpContext) {
     const payload = await request.validateUsing(createPostValidator)
 
-    await Post.create({
-      ...payload,
-      userId: auth.user!.id,
-    })
+    await postsService.create(auth.user!, payload)
 
     return response.redirect().toRoute('posts.index')
   }
 
   async show({ inertia, params }: HttpContext) {
-    const post = await Post.query()
-      .where('id', params.id)
-      .preload('user')
-      .preload('comments', (query) => {
-        query.preload('user').orderBy('createdAt', 'asc')
-      })
-      .firstOrFail()
+    const post = await postsService.findDetailed(params.id)
 
     return inertia.render('posts/show', {
       post: PostTransformer.transform(post).useVariant('forDetailedView'),
@@ -86,7 +75,7 @@ export default class PostsController {
   }
 
   async edit({ bouncer, params, inertia }: HttpContext) {
-    const post = await Post.findOrFail(params.id)
+    const post = await postsService.findForUpdate(params.id)
     await bouncer.with(PostPolicy).authorize('edit', post)
 
     return inertia.render('posts/edit', {
@@ -95,20 +84,20 @@ export default class PostsController {
   }
 
   async update({ bouncer, params, request, response, session }: HttpContext) {
-    const post = await Post.findOrFail(params.id)
+    const post = await postsService.findForUpdate(params.id)
     await bouncer.with(PostPolicy).authorize('edit', post)  // check again — direct PUT possible
 
     const data = await request.validateUsing(updatePostValidator)
-    await post.merge(data).save()
+    await postsService.update(post, data)
 
     session.flash('success', 'Post updated successfully')
     return response.redirect().toRoute('posts.show', { id: post.id })
   }
 
   async destroy({ bouncer, params, response }: HttpContext) {
-    const post = await Post.findOrFail(params.id)
+    const post = await postsService.findForDelete(params.id)
     await bouncer.with(PostPolicy).authorize('delete', post)
-    await post.delete()
+    await postsService.delete(post)
     return response.redirect().toRoute('posts.index')
   }
 }

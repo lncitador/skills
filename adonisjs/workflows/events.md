@@ -161,7 +161,7 @@ import emitter from '@adonisjs/core/services/emitter'
 import OrderPlaced from '#events/order_placed'
 
 test('fires OrderPlaced after creating order', async ({ client, assert }) => {
-  const user = await UserFactory.create()
+  const user = await makeUserWithLucidFactory()
   const events = emitter.fake()
 
   await client.post('/orders').loginAs(user).json({ ... })

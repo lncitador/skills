@@ -134,12 +134,9 @@ export default class UploadService {
 
 ---
 
-## Step 4 — Migration with file column
+## Step 4 — Data column
 
-```ts
-// Add to the model's migration that receives the upload
-table.string('avatar_path').nullable()  // stores the Drive "key"
-```
+Use `lucid` to add the storage-key column to the relevant table/model. Store the Drive key, not a public URL.
 
 ---
 
@@ -164,8 +161,7 @@ export default class AvatarController {
     // Replace previous avatar if it exists
     const key = await this.uploadService.replace(user.avatarPath, avatar, 'avatars')
 
-    user.avatarPath = key
-    await user.save()
+    await usersService.updateAvatar(user, key)
 
     return response.redirect().back()
   }
@@ -174,8 +170,7 @@ export default class AvatarController {
     const user = auth.user!
     if (user.avatarPath) {
       await this.uploadService.delete(user.avatarPath)
-      user.avatarPath = null
-      await user.save()
+      await usersService.updateAvatar(user, null)
     }
     return response.redirect().back()
   }
@@ -192,7 +187,7 @@ async store({ request, auth, response }: HttpContext) {
     images.map((img) => this.uploadService.upload(img, `galleries/${auth.user!.id}`))
   )
 
-  await Gallery.create({ userId: auth.user!.id, title, imagePaths: keys })
+  await galleriesService.createWithImages(auth.user!, { title, imagePaths: keys })
   return response.redirect().toRoute('galleries.index')
 }
 ```
@@ -201,12 +196,11 @@ async store({ request, auth, response }: HttpContext) {
 
 ## Step 6 — Expose URL in the controller
 
-Store the key in the DB, generate the URL when passing to the view:
+Store the key in the DB using `lucid`, generate the URL when passing to the view:
 
 ```ts
 async show({ inertia, params, auth }: HttpContext) {
-  const user = await User.findOrFail(auth.user!.id)
-
+  const user = auth.user!
   const avatarUrl = user.avatarPath
     ? await drive.use().getUrl(user.avatarPath)
     : null
@@ -263,7 +257,7 @@ export default function EditProfile() {
 
 ```ts
 test('uploads valid avatar', async ({ client, assert }) => {
-  const user = await UserFactory.create()
+  const user = await makeUserWithLucidFactory()
 
   const response = await client
     .put('/account/avatar')
@@ -276,7 +270,7 @@ test('uploads valid avatar', async ({ client, assert }) => {
 })
 
 test('rejects file that is too large', async ({ client }) => {
-  const user = await UserFactory.create()
+  const user = await makeUserWithLucidFactory()
   const bigFile = Buffer.alloc(3 * 1024 * 1024) // 3MB
 
   const response = await client
@@ -296,7 +290,7 @@ test('rejects file that is too large', async ({ client }) => {
 - [ ] Validator in separate file with `vine.file()` — size and extensions
 - [ ] UploadService encapsulates all Drive logic
 - [ ] When updating, delete the previous file (`replace`)
-- [ ] Key stored in DB, not the URL (URL generated dynamically)
+- [ ] Key stored in DB through data-layer code, not the URL (URL generated dynamically)
 - [ ] URL resolved in the controller before passing to the view
 - [ ] Form with `encType="multipart/form-data"` and `forceFormData: true` in Inertia
 - [ ] Tests cover valid upload and invalid file rejection

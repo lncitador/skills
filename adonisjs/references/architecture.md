@@ -29,7 +29,7 @@ the controller returns and what the frontend layer looks like.
 ```
 app/
 ├── controllers/     # HTTP: parse → validate → authorize → respond
-├── models/          # Relations + business logic (columns in schema.ts)
+├── models/          # Data layer; use `lucid`
 ├── services/        # Business logic with more than 2-3 steps
 ├── validators/      # VineJS: one file per entity
 ├── transformers/    # Serialize models to JSON + generate TS types
@@ -40,10 +40,7 @@ app/
 └── policies/        # Bouncer: authorization rules
 
 database/
-├── migrations/      # DB schema — drives schema.ts regeneration
-├── schema.ts        # AUTO-GENERATED — never edit manually
-├── seeders/         # Initial and development data
-└── factories/       # Test data factories
+└── ...              # Data layer; use `lucid`
 
 start/
 ├── routes.ts        # All application routes
@@ -61,7 +58,7 @@ routes → controllers → transformers → models
 ```
 
 - Controller: validates, authorizes, calls transformer, returns response
-- Model file: ONLY relations, computed properties, hooks — columns in schema.ts
+- Data/model rules live in `lucid`
 - Transformer: serializes models, uses `.allows()` for permission flags
 - Model does NOT know: HttpContext, controllers, services
 - Listener does NOT throw HTTP exceptions — catch and log internally
