@@ -4,6 +4,34 @@ Reusable agent skills for AdonisJS, Lucid, Inertia, Japa, and full-cycle enginee
 
 ## Install
 
+### Guided Installer
+
+Use the `adonisjs-maestro` CLI to install the right skills for your stack:
+
+```bash
+npx adonisjs-maestro
+```
+
+Non-interactive examples:
+
+```bash
+npx adonisjs-maestro --stack=vue --yes
+npx adonisjs-maestro --stack=react --global --agent=codex --yes
+npx adonisjs-maestro --skills=maestro,adonisjs,lucid,japa --yes
+```
+
+Available stacks:
+
+| Stack | Skills |
+| --- | --- |
+| `monorepo` | `maestro`, `adonisjs`, `lucid`, `japa` |
+| `hypermedia` | `maestro`, `adonisjs`, `lucid`, `japa` |
+| `react` | `maestro`, `adonisjs`, `lucid`, `japa`, `inertia-react` |
+| `vue` | `maestro`, `adonisjs`, `lucid`, `japa`, `inertia-vue` |
+| `custom` | Choose individual skills |
+
+### Direct Skills CLI
+
 Install the collection with the `skills` CLI:
 
 ```bash
@@ -85,6 +113,8 @@ The framework skills include references and runbooks for deeper context. The `ma
 Use the Skills CLI to search, install, check, and update skills:
 
 ```bash
+npm run typecheck
+npm run build
 npx skills find adonisjs
 npx skills check
 npx skills update
