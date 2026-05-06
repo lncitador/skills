@@ -1,0 +1,66 @@
+{
+  "name": "adonisjs-maestro",
+  "description": "Install AdonisJS Maestro agent skills by stack",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "adonisjs-maestro": "build/bin/run.js"
+  },
+  "exports": {
+    ".": "./build/index.js"
+  },
+  "files": [
+    "build",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "prepack": "npm run build",
+    "test": "node --import=@poppinss/ts-exec --enable-source-maps bin/test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@adonisjs/ace": "^14.1.0",
+    "execa": "^9.6.1"
+  },
+  "devDependencies": {
+    "@japa/assert": "^4.2.0",
+    "@japa/runner": "^5.3.0",
+    "@poppinss/ts-exec": "^1.4.4",
+    "@types/node": "^25.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "tsup": {
+    "entry": [
+      "./index.ts",
+      "./bin/run.ts"
+    ],
+    "outDir": "./build",
+    "clean": true,
+    "format": "esm",
+    "target": "esnext",
+    "dts": false,
+    "sourcemap": false
+  },
+  "keywords": [
+    "adonisjs",
+    "agent-skills",
+    "skills",
+    "maestro"
+  ],
+  "homepage": "https://github.com/lncitador/skills#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lncitador/skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lncitador/skills/issues"
+  },
+  "license": "MIT"
+}
