@@ -5,6 +5,7 @@ import { BaseCommand, flags } from '@adonisjs/ace'
 const skillsBin = fileURLToPath(import.meta.resolve('skills/bin/cli.mjs'))
 
 import {
+  AVAILABLE_AGENTS,
   AVAILABLE_SKILLS,
   SKILL_METADATA,
   STACKS,
@@ -100,15 +101,25 @@ export class InstallSkills extends BaseCommand {
     })
   }
 
-  #parseAgents() {
-    if (!this.agent) {
+  async #resolveAgents() {
+    if (this.agent) {
+      return this.agent
+        .split(',')
+        .map((agent) => agent.trim())
+        .filter(Boolean)
+    }
+
+    if (this.yes) {
       return []
     }
 
-    return this.agent
-      .split(',')
-      .map((agent) => agent.trim())
-      .filter(Boolean)
+    const selected = await this.prompt.multiple(
+      'Which agents should receive the skills?',
+      AVAILABLE_AGENTS.map((agent) => ({ name: agent.name, message: agent.label })),
+      { hint: 'Space to toggle, Enter to confirm. Empty = auto-detect installed agents' }
+    )
+
+    return selected
   }
 
   async #resolveSkills() {
@@ -144,11 +155,12 @@ export class InstallSkills extends BaseCommand {
     }
 
     const isGlobal = await this.#promptForScope()
+    const agents = await this.#resolveAgents()
 
     const args = buildSkillsAddArgs({
       skills,
       global: isGlobal,
-      agents: this.#parseAgents(),
+      agents,
       yes: true,
     })
 
