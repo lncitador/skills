@@ -57,6 +57,13 @@ Restart your agent after installing so the new skills are loaded.
 | `inertia-react` | React frontend patterns in AdonisJS + Inertia projects |
 | `japa` | Japa testing in AdonisJS apps: API tests, browser tests, console tests, fakes, swaps, and database setup |
 
+### In Progress
+
+| Skill | Stack | Use it for |
+| --- | --- | --- |
+| `edge` | `hypermedia` | Edge.js server-side templates: layouts, components, partials, tags, and view helpers |
+| `tuyau` | `api-monorepo` | Tuyau end-to-end type-safe API client: codegen, typed routes, and RPC-style calls |
+
 ## Recommended Entry Point
 
 Use `maestro` when the task is broader than a single framework question.
