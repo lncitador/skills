@@ -1,7 +1,7 @@
 {
   "name": "adonisjs-maestro",
   "description": "Install AdonisJS Maestro agent skills by stack",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "main": "build/index.js",
   "bin": {
