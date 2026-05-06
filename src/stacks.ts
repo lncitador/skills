@@ -1,4 +1,4 @@
-export const SKILLS_REPOSITORY = 'lncitador/skills'
+export const SKILLS_REPOSITORY = 'lncitador/adonisjs-maestro'
 
 export const AVAILABLE_SKILLS = [
   'maestro',

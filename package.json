@@ -58,13 +58,13 @@
     "skills",
     "maestro"
   ],
-  "homepage": "https://github.com/lncitador/skills#readme",
+  "homepage": "https://github.com/lncitador/adonisjs-maestro#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lncitador/skills.git"
+    "url": "git+https://github.com/lncitador/adonisjs-maestro.git"
   },
   "bugs": {
-    "url": "https://github.com/lncitador/skills/issues"
+    "url": "https://github.com/lncitador/adonisjs-maestro/issues"
   },
   "license": "MIT"
 }

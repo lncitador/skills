@@ -62,7 +62,7 @@ test.group('stacks', () => {
       [
         'skills',
         'add',
-        'lncitador/skills',
+        'lncitador/adonisjs-maestro',
         '--skill',
         'maestro',
         '--skill',

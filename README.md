@@ -35,13 +35,13 @@ Available stacks:
 Install the collection with the `skills` CLI:
 
 ```bash
-npx skills add lncitador/skills
+npx skills add lncitador/adonisjs-maestro
 ```
 
 For a global install:
 
 ```bash
-npx skills add lncitador/skills -g --yes
+npx skills add lncitador/adonisjs-maestro -g --yes
 ```
 
 Restart your agent after installing so the new skills are loaded.
@@ -95,15 +95,16 @@ Use a specialized skill directly when the request is narrow:
 
 ## Repository Layout
 
-Each skill is a folder containing a required `SKILL.md` file and optional resources:
+All skills live under `skills/`. Each folder contains a required `SKILL.md` file and optional resources:
 
 ```text
-maestro/
-adonisjs/
-lucid/
-inertia-vue/
-inertia-react/
-japa/
+skills/
+├── maestro/
+├── adonisjs/
+├── lucid/
+├── inertia-vue/
+├── inertia-react/
+└── japa/
 ```
 
 The framework skills include references and runbooks for deeper context. The `maestro` skill intentionally has no scripts or references: it is an orchestration layer.
