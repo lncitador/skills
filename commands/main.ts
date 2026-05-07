@@ -1,17 +1,19 @@
 import { fileURLToPath } from 'node:url'
 import { execa } from 'execa'
 import { BaseCommand, flags } from '@adonisjs/ace'
+import { getSkillsCliFailureExitCode } from '../src/skills_cli.js'
 
 const skillsBin = fileURLToPath(import.meta.resolve('skills/bin/cli.mjs'))
 
 import {
-  AVAILABLE_AGENTS,
   AVAILABLE_SKILLS,
+  DEFAULT_INSTALL_AGENTS,
   SKILL_METADATA,
   STACKS,
   type SkillName,
   buildSkillsAddArgs,
   getStack,
+  parseAgents,
   parseSkills,
 } from '../src/stacks.js'
 
@@ -103,29 +105,14 @@ export class InstallSkills extends BaseCommand {
 
   async #resolveAgents() {
     if (this.agent) {
-      return this.agent
-        .split(',')
-        .map((agent) => agent.trim())
-        .filter(Boolean)
+      return parseAgents(this.agent)
     }
 
     if (this.yes) {
-      return ['universal']
+      return [...DEFAULT_INSTALL_AGENTS]
     }
 
-    const chooseSpecific = await this.prompt.confirm('Choose specific agents?', { default: false })
-
-    if (!chooseSpecific) {
-      return ['universal']
-    }
-
-    const selected = await this.prompt.multiple(
-      'Which agents should receive the skills?',
-      AVAILABLE_AGENTS.map((agent) => ({ name: agent.name, message: agent.label })),
-      { hint: 'Space to toggle, Enter to confirm' }
-    )
-
-    return selected.length > 0 ? selected : ['universal']
+    return undefined
   }
 
   async #resolveSkills() {
@@ -167,7 +154,7 @@ export class InstallSkills extends BaseCommand {
       skills,
       global: isGlobal,
       agents,
-      yes: true,
+      yes: this.yes,
     })
 
     this.logger.info(`Installing skills: ${skills.join(', ')}`)
@@ -177,9 +164,16 @@ export class InstallSkills extends BaseCommand {
       return
     }
 
-    await execa('node', [skillsBin, ...args.slice(1)], {
+    const result = await execa('node', [skillsBin, ...args.slice(1)], {
       stdio: 'inherit',
+      reject: false,
     })
+
+    const exitCode = getSkillsCliFailureExitCode(result)
+    if (exitCode !== undefined) {
+      process.exitCode = exitCode
+      return
+    }
 
     this.logger.success('AdonisJS Maestro skills installed')
   }

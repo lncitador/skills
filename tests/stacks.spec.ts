@@ -2,8 +2,10 @@ import { test } from '@japa/runner'
 
 import {
   AVAILABLE_SKILLS,
+  DEFAULT_INSTALL_AGENTS,
   buildSkillsAddArgs,
   getStack,
+  parseAgents,
   parseSkills,
 } from '../src/stacks.js'
 
@@ -49,6 +51,18 @@ test.group('stacks', () => {
 
   test('rejects unknown skills', ({ assert }) => {
     assert.throws(() => parseSkills('maestro,unknown'), 'Unknown skill(s): unknown')
+  })
+
+  test('parses comma-separated agents and removes duplicates', ({ assert }) => {
+    assert.deepEqual(parseAgents('universal, claude-code,claude-code,codex'), [
+      'universal',
+      'claude-code',
+      'codex',
+    ])
+  })
+
+  test('defines non-interactive default install agents', ({ assert }) => {
+    assert.deepEqual([...DEFAULT_INSTALL_AGENTS], ['universal', 'claude-code'])
   })
 
   test('keeps available skills in the public install order', ({ assert }) => {
