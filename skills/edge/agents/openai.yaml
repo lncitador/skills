@@ -1,0 +1,7 @@
+interface:
+  display_name: "Edge"
+  short_description: "Edge.js templates for AdonisJS Hypermedia apps"
+  default_prompt: "Use $edge with $adonisjs to build or review AdonisJS Hypermedia Edge templates."
+
+policy:
+  allow_implicit_invocation: true

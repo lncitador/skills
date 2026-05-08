@@ -25,7 +25,7 @@ Available stacks:
 | Stack | Skills |
 | --- | --- |
 | `monorepo` | `maestro`, `adonisjs`, `lucid`, `japa` |
-| `hypermedia` | `maestro`, `adonisjs`, `lucid`, `japa` |
+| `hypermedia` | `maestro`, `adonisjs`, `lucid`, `japa`, `edge` |
 | `react` | `maestro`, `adonisjs`, `lucid`, `japa`, `inertia-react` |
 | `vue` | `maestro`, `adonisjs`, `lucid`, `japa`, `inertia-vue` |
 | `custom` | Choose individual skills |
@@ -53,6 +53,7 @@ Restart your agent after installing so the new skills are loaded.
 | `maestro` | Orchestrating full-cycle app work: intake, planning, implementation, verification, commit, push, and PR |
 | `adonisjs` | AdonisJS v7 backend work: migrations, models, transformers, controllers, routes, auth, policies, services, events, and review |
 | `lucid` | Lucid ORM and SQL layer: migrations, schema generation, models, relationships, query builders, transactions, factories, and seeders |
+| `edge` | Edge.js server-side templates in AdonisJS Hypermedia apps: layouts, components, forms, slots, and template state |
 | `inertia-vue` | Vue 3 frontend patterns in AdonisJS + Inertia projects |
 | `inertia-react` | React frontend patterns in AdonisJS + Inertia projects |
 | `japa` | Japa testing in AdonisJS apps: API tests, browser tests, console tests, fakes, swaps, and database setup |
@@ -61,7 +62,6 @@ Restart your agent after installing so the new skills are loaded.
 
 | Skill | Stack | Use it for |
 | --- | --- | --- |
-| `edge` | `hypermedia` | Edge.js server-side templates: layouts, components, partials, tags, and view helpers |
 | `tuyau` | `api-monorepo` | Tuyau end-to-end type-safe API client: codegen, typed routes, and RPC-style calls |
 
 ## Recommended Entry Point
@@ -109,6 +109,7 @@ skills/
 ├── maestro/
 ├── adonisjs/
 ├── lucid/
+├── edge/
 ├── inertia-vue/
 ├── inertia-react/
 └── japa/

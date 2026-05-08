@@ -6,6 +6,7 @@ export const AVAILABLE_SKILLS = [
   'adonisjs',
   'lucid',
   'japa',
+  'edge',
   'inertia-react',
   'inertia-vue',
 ] as const
@@ -28,6 +29,10 @@ export const SKILL_METADATA: Record<SkillName, { label: string; hint: string }> 
   japa: {
     label: 'Japa',
     hint: 'API, browser, and console tests with fakes and database setup',
+  },
+  edge: {
+    label: 'Edge',
+    hint: 'Server-rendered Edge templates and Hypermedia starter kit components',
   },
   'inertia-react': {
     label: 'Inertia React',
@@ -55,7 +60,7 @@ export const STACKS: StackDefinition[] = [
     label: 'Hypermedia app',
     hint: 'A full-stack app using server-side templates',
     starterKit: 'github:adonisjs/starter-kits/hypermedia',
-    skills: ['maestro', 'adonisjs', 'lucid', 'japa'],
+    skills: ['maestro', 'adonisjs', 'lucid', 'japa', 'edge'],
   },
   {
     name: 'react',

@@ -11,7 +11,7 @@ import {
 
 test.group('stacks', () => {
   test('defines stack presets with the expected skills', ({ assert }) => {
-    assert.deepEqual(getStack('hypermedia')?.skills, ['maestro', 'adonisjs', 'lucid', 'japa'])
+    assert.deepEqual(getStack('hypermedia')?.skills, ['maestro', 'adonisjs', 'lucid', 'japa', 'edge'])
     assert.deepEqual(getStack('api')?.skills, ['maestro', 'adonisjs', 'lucid', 'japa'])
     assert.deepEqual(getStack('api-monorepo')?.skills, ['maestro', 'adonisjs', 'lucid', 'japa'])
     assert.deepEqual(getStack('react')?.skills, [
@@ -71,6 +71,7 @@ test.group('stacks', () => {
       'adonisjs',
       'lucid',
       'japa',
+      'edge',
       'inertia-react',
       'inertia-vue',
     ])
