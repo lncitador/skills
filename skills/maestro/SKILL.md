@@ -118,18 +118,24 @@ lucid: migration -> schema generation -> model relationships
       -> UI components and forms
 ```
 
-If the task touches generated AdonisJS client/types (`.adonisjs`, `@generated/*`, `Data.*`, `InferPageProps`, Tuyau routes, controller imports), ensure the app dev server is running before relying on generated files. The dev server is the source that regenerates `.adonisjs`.
+If the task touches generated AdonisJS client/types (`.adonisjs`, `@generated/*`, `#generated/*`, `Data.*`, `InferPageProps`, Tuyau routes, controller imports), use the codegen protocol below before editing frontend code or generated-contract imports.
 
-### Dev Server Watcher
+### AdonisJS Codegen Protocol
 
-For BUILD and VERIFY work that depends on regenerated `.adonisjs` files, maintain a background watcher mindset:
+`.adonisjs` is generated output. NEVER edit `.adonisjs/**`, `@generated/*`, or `#generated/*` to fix types, routes, controllers, or data contracts. Fix the source files that produce the generated output, then run the dev server/codegen path until `.adonisjs` updates.
 
-- Check whether the relevant dev server is already running before editing generated-contract code.
-- If it is not running, identify the repo's dev command from `package.json`, project docs, or app scripts, then start it when allowed.
-- Keep the server running while backend contracts, transformers, controllers, routes, or Inertia props are changing.
-- After changing backend contracts, wait for regeneration before typing frontend props or route helpers.
-- If subagents/background workers are available and the user has asked for background or parallel work, assign one watcher to monitor dev-server output and report generation/errors. Otherwise, manage the running dev server locally.
-- Before DONE, report whether the server is still running, was stopped, or could not be started.
+Mandatory sequence:
+
+1. State the plan.
+2. Identify which source change should generate the needed output: transformer, controller, route, middleware, model, config, or Tuyau/Inertia source.
+3. Check whether the relevant AdonisJS dev server is already running.
+4. If it is not running, start it as a long-running job before depending on generated files. Discover the command from the touched app's `package.json` or docs; common examples are `node ace serve --hmr`, `pnpm dev`, `pnpm --filter <app> dev`, or the repo-specific dev script.
+5. Keep the dev job running while backend contracts, transformers, controllers, routes, or Inertia props are changing.
+6. Wait for successful codegen/reload output before importing or typing against regenerated files.
+7. If `.adonisjs` still does not update, debug the dev server/codegen error. Do not patch generated files by hand.
+8. Before DONE, report the dev job status: already running, started and still running, stopped, or blocked.
+
+When subagents/background workers are explicitly requested, assign one background worker to the dev job/codegen watch only. Its job is to keep the server alive, surface reload/codegen errors, and confirm regeneration. It must not edit source files.
 
 Default build order:
 
@@ -152,7 +158,7 @@ Parallelize only when the user explicitly asks for subagents or parallel work, a
 Do not:
 
 - Edit before stating a plan
-- Edit generated files unless the repo explicitly requires it
+- Edit `.adonisjs/**`, `@generated/*`, or `#generated/*`
 - Use `git add .` or `git add -A`
 - Broaden the task beyond the request
 - Implement while the user is still asking for planning
